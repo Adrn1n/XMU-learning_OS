@@ -2,7 +2,8 @@
 
 struct mp {             // floating pointer
   uchar signature[4];           // "_MP_"
-  void *physaddr;               // phys addr of MP config table
+  // void *physaddr;               // phys addr of MP config table
+  uint physaddr;                // phys addr of MP config table
   uchar length;                 // 1
   uchar specrev;                // [14]
   uchar checksum;               // all bytes must add up to 0
