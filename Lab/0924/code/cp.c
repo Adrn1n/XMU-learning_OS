@@ -9,7 +9,7 @@ int main(int argc, char *argv[])
 {
     if (argc != 3)
     {
-        printf(2, "cp: Usage: cp <src> <dst>\n");
+        printf(2, "cp: usage: cp <src> <dst>\n");
         exit();
     }
     if (strcmp(argv[1], argv[2]) == 0)

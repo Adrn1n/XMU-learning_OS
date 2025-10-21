@@ -84,7 +84,7 @@ int lsh_exit(struct cmd *cmd)
 /**
   @brief Launch a program and wait for it to terminate.
   @param args Null terminated list of arguments (including program).
-  @return Always returns 1
+  // @return Always returns 1
  */
 int lsh_execute(struct cmd *cmd)
 {
@@ -112,10 +112,41 @@ int lsh_execute(struct cmd *cmd)
     break;
 
   case REDIN:
+    if (cmd->right[1])
+      printf(2, "<: too many inputs, only the first will be used\n");
+    if ((fd = open(cmd->right[0], O_RDONLY)) < 0)
+    {
+      printf(2, "<: failed to open %s\n", cmd->right[0]);
+      return 0;
+    }
+    if (fork() == 0)
+    {
+      close(0), dup(fd), close(fd);
+      exec(cmd->left[0], cmd->left);
+      printf(2, "lsh: exec failed\n");
+      exit();
+    }
+    wait();
 
     break;
 
   case REDOUT:
+    if (cmd->right[1])
+      printf(2, ">: too many outputs, only the first will be used\n");
+    unlink(cmd->right[0]);
+    if ((fd = open(cmd->right[0], O_CREATE | O_WRONLY)) < 0)
+    {
+      printf(2, ">: failed to open %s\n", cmd->right[0]);
+      return 0;
+    }
+    if (fork() == 0)
+    {
+      close(1), dup(fd), close(fd);
+      exec(cmd->left[0], cmd->left);
+      printf(2, "lsh: exec failed\n");
+      exit();
+    }
+    wait();
 
     break;
 
