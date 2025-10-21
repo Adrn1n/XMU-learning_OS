@@ -126,6 +126,7 @@ int lsh_execute(struct cmd *cmd)
       printf(2, "lsh: exec failed\n");
       exit();
     }
+    close(fd);
     wait();
 
     break;
@@ -146,11 +147,33 @@ int lsh_execute(struct cmd *cmd)
       printf(2, "lsh: exec failed\n");
       exit();
     }
+    close(fd);
     wait();
 
     break;
 
   case PIPE:
+    if ((pipe(p)) < 0)
+    {
+      printf(2, "|: failed to create pipe\n");
+      return 0;
+    }
+    if (fork() == 0)
+    {
+      close(p[0]), close(1), dup(p[1]), close(p[1]);
+      exec(cmd->left[0], cmd->left);
+      printf(2, "lsh: exec failed\n");
+      exit();
+    }
+    if (fork() == 0)
+    {
+      close(p[1]), close(0), dup(p[0]), close(p[0]);
+      exec(cmd->right[0], cmd->right);
+      printf(2, "lsh: exec failed\n");
+      exit();
+    }
+    close(p[0]), close(p[1]);
+    wait(), wait();
 
     break;
   }
