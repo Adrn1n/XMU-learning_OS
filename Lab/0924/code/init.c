@@ -7,7 +7,8 @@
 
 #include "sdh.h"
 
-char *argv[] = {"sh", 0};
+// char *argv[] = {"sh", 0};
+char *argv[] = {"lsh", 0};
 
 int main(void)
 {
@@ -35,7 +36,8 @@ int main(void)
     if (pid == 0)
     {
       exec(argv[0], argv);
-      printf(1, "init: exec sh failed\n");
+      // printf(1, "init: exec sh failed\n");
+      printf(1, "init: exec %s failed\n", argv[0]);
       exit();
     }
     while ((wpid = wait()) >= 0 && wpid != pid)

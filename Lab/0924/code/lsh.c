@@ -54,6 +54,12 @@ int lsh_num_builtins()
 
 int lsh_cd(struct cmd *cmd)
 {
+  if (chdir(cmd->left[1]) < 0)
+  {
+    printf(2, "cd: error access %s\n", cmd->left[1]);
+    return 0;
+  }
+  return 1;
 }
 
 int lsh_help(struct cmd *cmd)
@@ -71,6 +77,8 @@ int lsh_help(struct cmd *cmd)
 
 int lsh_exit(struct cmd *cmd)
 {
+  exit();
+  return 0;
 }
 
 /**
