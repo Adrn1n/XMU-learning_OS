@@ -54,6 +54,8 @@ int lsh_num_builtins()
 
 int lsh_cd(struct cmd *cmd)
 {
+  if (cmd->left[2])
+    printf(2, "cd: too many arguments, only the first will be used\n");
   if (chdir(cmd->left[1]) < 0)
   {
     printf(2, "cd: error access %s\n", cmd->left[1]);

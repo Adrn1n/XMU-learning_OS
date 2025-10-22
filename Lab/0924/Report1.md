@@ -116,7 +116,7 @@ Increase the number of direct blocks in inode structure to increase the maximum 
 
 ```
 
-Increase the file system size to accommodate all used blocks (1053 is just right at initally, 1062 is just right after all code changes is done).
+Increase the file system size to accommodate all used blocks (1053 is just right at initally, 1063 is just right after all code changes is done).
 
 ## Implementation
 ### 1
@@ -200,14 +200,15 @@ int main(int argc, char *argv[])
 ### 2
 #### 2.1
 ##### Features
-- `cd [dir]`: return 1 on successful, 0 otherwise
+- `cd [dir]`: only the first argument is used; return 1 on successful, 0 otherwise
 - `exit`: exit the process, return 0 if failed
 
 ##### Steps
 - `cd`:
-    1. Use `chdir()` system call to change the current working directory to the specified path
-    2. If `chdir()` fails, print an error message and return 0
-    3. If successful, return 1
+    1. Check if multiple arguments are provided; if so, print a warning message
+    2. Use `chdir()` system call to change the current working directory to the specified path
+    3. If `chdir()` fails, print an error message and return 0
+    4. If successful, return 1
 - `exit`:
     1. Call the `exit()` system call to terminate the shell process
     2. Return 0 (though this line is never reached when successful; if returned, it indicates failure)
@@ -218,6 +219,8 @@ int main(int argc, char *argv[])
 //...
 int lsh_cd(struct cmd *cmd)
 {
+  if (cmd->left[2])
+    printf(2, "cd: too many arguments, only the first will be used\n");
   if (chdir(cmd->left[1]) < 0)
   {
     printf(2, "cd: error access %s\n", cmd->left[1]);
@@ -238,15 +241,15 @@ int lsh_exit(struct cmd *cmd)
 #### 2.2
 Return 1 on successful execution, 0 otherwise. But can not detect execution failure in child processes.
 
+Built-in commands are not supported with redirection or piping.
+
 ##### 2.2.1
 ###### Features
-- Only the first input file is used; if multiple input files are specified, a warning is printed
-- If the input file cannot be opened, an error message is printed and returns 0
-- If command execution fails, an error message is printed
+- Only the first input file is used
 
 ###### Steps
 1. Check if multiple input files are specified; if so, print a warning message
-2. Attempt to open the specified input file in read-only mode; if it fails, print an error message and return 0
+2. Attempt to open the specified input file in read-only mode; if it fails, print an error message and return
 3. Fork a new process to execute the command:
     - In the child process:
         1. Close the standard input (file descriptor 0)
@@ -257,7 +260,6 @@ Return 1 on successful execution, 0 otherwise. But can not detect execution fail
     - In the parent process:
         1. Close the file descriptor of the input file
         2. Wait for the child process to finish
-4. Return 1
 
 ###### Code
 `lsh.c`
@@ -288,14 +290,12 @@ Return 1 on successful execution, 0 otherwise. But can not detect execution fail
 
 ##### 2.2.2
 ###### Features
-- Only the first output file is used; if multiple output files are specified, a warning is printed
-- If the output file cannot be created/opened, an error message is printed and returns 0
-- If command execution fails, an error message is printed
+- Only the first output file is used
 
 ###### Steps
 1. Check if multiple output files are specified; if so, print a warning message
 2. Unlink the specified output file to remove it if it exists
-3. Attempt to open/create the specified output file in write-only mode; if it fails, print an error message and return 0
+3. Attempt to open/create the specified output file in write-only mode; if it fails, print an error message and return
 4. Fork a new process to execute the command:
     - In the child process:
         1. Close the standard output (file descriptor 1)
@@ -306,7 +306,6 @@ Return 1 on successful execution, 0 otherwise. But can not detect execution fail
     - In the parent process:
         1. Close the file descriptor of the output file
         2. Wait for the child process to finish
-5. Return 1
 
 ###### Code
 `lsh.c`
@@ -341,7 +340,7 @@ Return 1 on successful execution, 0 otherwise. But can not detect execution fail
 - If command execution fails in either process, an error message is printed
 
 ###### Steps
-1. Create a pipe using the `pipe()` system call; if it fails, print an error message and return 0
+1. Create a pipe using the `pipe()` system call; if it fails, print an error message and return
 2. Fork the first child process to execute the left command:
     - In the first child process:
         1. Close the read end of the pipe
@@ -361,7 +360,6 @@ Return 1 on successful execution, 0 otherwise. But can not detect execution fail
 4. In the parent process:
     1. Close both ends of the pipe
     2. Wait for both child processes to finish
-5. Return 1
 
 ###### Code
 `lsh.c`
@@ -408,16 +406,1319 @@ char *argv[] = {"lsh", 0};
 ```
 
 ## Results
+Modify `param.h` to increase blocks for the file system size to accommodate all changes.
+
 ### 1
+#### Steps
+1. Try various incorrect usages of `cp` to test error handling
+2. Copy `README` to `a.txt`
+3. Copy `a.txt` to `a.txt`
+4. Create directory `dir` and copy `a.txt` to `dir/`
+5. Copy `a.txt` to `dir/b.txt`
+6. Copy `.` to `a.txt`
+
+#### Expected results
+1. Error messages printed for incorrect usages
+2. `a.txt` is created and has the same content as `README`
+3. Error message printed: `cp: src(a.txt) and dst(a.txt) are the same`
+4. `dir/a.txt` is created and has the same content as `a.txt`
+5. `dir/b.txt` is created and has the same content as `a.txt`
+6. `a.txt` is overwritten and has the same content as `.`
+
+#### Actual results
+```shell
+SeaBIOS (version 1.16.3-debian-1.16.3-2)
+
+
+iPXE (https://ipxe.org) 00:03.0 CA00 PCI2.10 PnP PMM+1EFCAF60+1EF0AF60 CA00
+                                                                               
+
+
+Booting from Hard Disk..xv6...
+cpu0: starting 0
+sb: size 2063 nblocks 1979 ninodes 200 nlog 30 logstart 2 inodestart 32 bmap start 83
+Scheduler default policy: DEFAULT
+init: starting lsh
+$ ls
+.              1 1 512
+..             1 1 512
+README         2 2 2290
+cat            2 3 18868
+echo           2 4 17648
+forktest       2 5 10008
+grep           2 6 22380
+init           2 7 18532
+kill           2 8 17676
+ln             2 9 17592
+ls             2 10 20544
+mkdir          2 11 17732
+rm             2 12 17716
+sh             2 13 34564
+stressfs       2 14 18660
+usertests      2 15 75732
+wc             2 16 19392
+zombie         2 17 17244
+head           2 18 22596
+cp             2 19 19536
+lsh            2 20 26628
+ps             2 21 17056
+nice           2 22 17044
+scheduler_test 2 23 17312
+sem_test       2 24 17080
+console        3 25 0
+$ 
+```
+
+1. 
+    ```shell
+    $ cp 
+    cp: usage: cp <src> <dst>
+    $ cp README a.txt b.txt
+    cp: usage: cp <src> <dst>
+    $ 
+    ```
+2. 
+    ```shell
+    $ cat README
+    xv6 is a re-implementation of Dennis Ritchie's and Ken Thompson's Unix
+    Version 6 (v6).  xv6 loosely follows the structure and style of v6,
+    but is implemented for a modern x86-based multiprocessor using ANSI C.
+
+    ACKNOWLEDGMENTS
+
+    xv6 is inspired by John Lions's Commentary on UNIX 6th Edition (Peer
+    to Peer Communications; ISBN: 1-57398-013-7; 1st edition (June 14,
+    2000)). See also http://pdos.csail.mit.edu/6.828/2016/xv6.html, which
+    provides pointers to on-line resources for v6.
+
+    xv6 borrows code from the following sources:
+        JOS (asm.h, elf.h, mmu.h, bootasm.S, ide.c, console.c, and others)
+        Plan 9 (entryother.S, mp.h, mp.c, lapic.c)
+        FreeBSD (ioapic.c)
+        NetBSD (console.c)
+
+    The following people have made contributions: Russ Cox (context switching,
+    locking), Cliff Frey (MP), Xiao Yu (MP), Nickolai Zeldovich, and Austin
+    Clements.
+
+    We are also grateful for the bug reports and patches contributed by Silas
+    Boyd-Wickizer, Anton Burtsev, Cody Cutler, Mike CAT, Tej Chajed, Nelson Elhage,
+    Saar Ettinger, Alice Ferrazzi, Nathaniel Filardo, Peter Froehlich, Yakir Goaron,
+    Shivam Handa, Bryan Henry, Jim Huang, Alexander Kapshuk, Anders Kaseorg,
+    kehao95, Wolfgang Keller, Eddie Kohler, Austin Liew, Imbar Marinescu, Yandong
+    Mao, Hitoshi Mitake, Carmi Merimovich, Joel Nider, Greg Price, Ayan Shafqat,
+    Eldar Sehayek, Yongming Shen, Cam Tenny, Rafael Ubal, Warren Toomey, Stephen Tu,
+    Pablo Ventura, Xi Wang, Keiichi Watanabe, Nicolas Wolovick, Grant Wu, Jindong
+    Zhang, Icenowy Zheng, and Zou Chang Wei.
+
+    The code in the files that constitute xv6 is
+    Copyright 2006-2016 Frans Kaashoek, Robert Morris, and Russ Cox.
+
+    ERROR REPORTS
+
+    Please send errors and suggestions to Frans Kaashoek and Robert Morris
+    (kaashoek,rtm@mit.edu). The main purpose of xv6 is as a teaching
+    operating system for MIT's 6.828, so we are more interested in
+    simplifications and clarifications than new features.
+
+    BUILDING AND RUNNING XV6
+
+    To build xv6 on an x86 ELF machine (like Linux or FreeBSD), run
+    "make". On non-x86 or non-ELF machines (like OS X, even on x86), you
+    will need to install a cross-compiler gcc suite capable of producing
+    x86 ELF binaries. See http://pdos.csail.mit.edu/6.828/2016/tools.html.
+    Then run "make TOOLPREFIX=i386-jos-elf-". Now install the QEMU PC
+    simulator and run "make qemu".
+    $ cp README a.txt
+    $ ls 
+    .              1 1 512
+    ..             1 1 512
+    README         2 2 2290
+    cat            2 3 18868
+    echo           2 4 17648
+    forktest       2 5 10008
+    grep           2 6 22380
+    init           2 7 18532
+    kill           2 8 17676
+    ln             2 9 17592
+    ls             2 10 20544
+    mkdir          2 11 17732
+    rm             2 12 17716
+    sh             2 13 34564
+    stressfs       2 14 18660
+    usertests      2 15 75732
+    wc             2 16 19392
+    zombie         2 17 17244
+    head           2 18 22596
+    cp             2 19 19536
+    lsh            2 20 26628
+    ps             2 21 17056
+    nice           2 22 17044
+    scheduler_test 2 23 17312
+    sem_test       2 24 17080
+    console        3 25 0
+    a.txt          2 26 2290
+    $ cat a.txt
+    xv6 is a re-implementation of Dennis Ritchie's and Ken Thompson's Unix
+    Version 6 (v6).  xv6 loosely follows the structure and style of v6,
+    but is implemented for a modern x86-based multiprocessor using ANSI C.
+
+    ACKNOWLEDGMENTS
+
+    xv6 is inspired by John Lions's Commentary on UNIX 6th Edition (Peer
+    to Peer Communications; ISBN: 1-57398-013-7; 1st edition (June 14,
+    2000)). See also http://pdos.csail.mit.edu/6.828/2016/xv6.html, which
+    provides pointers to on-line resources for v6.
+
+    xv6 borrows code from the following sources:
+        JOS (asm.h, elf.h, mmu.h, bootasm.S, ide.c, console.c, and others)
+        Plan 9 (entryother.S, mp.h, mp.c, lapic.c)
+        FreeBSD (ioapic.c)
+        NetBSD (console.c)
+
+    The following people have made contributions: Russ Cox (context switching,
+    locking), Cliff Frey (MP), Xiao Yu (MP), Nickolai Zeldovich, and Austin
+    Clements.
+
+    We are also grateful for the bug reports and patches contributed by Silas
+    Boyd-Wickizer, Anton Burtsev, Cody Cutler, Mike CAT, Tej Chajed, Nelson Elhage,
+    Saar Ettinger, Alice Ferrazzi, Nathaniel Filardo, Peter Froehlich, Yakir Goaron,
+    Shivam Handa, Bryan Henry, Jim Huang, Alexander Kapshuk, Anders Kaseorg,
+    kehao95, Wolfgang Keller, Eddie Kohler, Austin Liew, Imbar Marinescu, Yandong
+    Mao, Hitoshi Mitake, Carmi Merimovich, Joel Nider, Greg Price, Ayan Shafqat,
+    Eldar Sehayek, Yongming Shen, Cam Tenny, Rafael Ubal, Warren Toomey, Stephen Tu,
+    Pablo Ventura, Xi Wang, Keiichi Watanabe, Nicolas Wolovick, Grant Wu, Jindong
+    Zhang, Icenowy Zheng, and Zou Chang Wei.
+
+    The code in the files that constitute xv6 is
+    Copyright 2006-2016 Frans Kaashoek, Robert Morris, and Russ Cox.
+
+    ERROR REPORTS
+
+    Please send errors and suggestions to Frans Kaashoek and Robert Morris
+    (kaashoek,rtm@mit.edu). The main purpose of xv6 is as a teaching
+    operating system for MIT's 6.828, so we are more interested in
+    simplifications and clarifications than new features.
+
+    BUILDING AND RUNNING XV6
+
+    To build xv6 on an x86 ELF machine (like Linux or FreeBSD), run
+    "make". On non-x86 or non-ELF machines (like OS X, even on x86), you
+    will need to install a cross-compiler gcc suite capable of producing
+    x86 ELF binaries. See http://pdos.csail.mit.edu/6.828/2016/tools.html.
+    Then run "make TOOLPREFIX=i386-jos-elf-". Now install the QEMU PC
+    simulator and run "make qemu".
+    $ 
+    ```
+3. 
+    ```shell
+    $ cp a.txt a.txt
+    cp: src(a.txt) and dst(a.txt) are the same
+    $ 
+    ```
+4. 
+    ```shell
+    $ mkdir dir
+    $ ls
+    .              1 1 512
+    ..             1 1 512
+    README         2 2 2290
+    cat            2 3 18868
+    echo           2 4 17648
+    forktest       2 5 10008
+    grep           2 6 22380
+    init           2 7 18532
+    kill           2 8 17676
+    ln             2 9 17592
+    ls             2 10 20544
+    mkdir          2 11 17732
+    rm             2 12 17716
+    sh             2 13 34564
+    stressfs       2 14 18660
+    usertests      2 15 75732
+    wc             2 16 19392
+    zombie         2 17 17244
+    head           2 18 22596
+    cp             2 19 19536
+    lsh            2 20 26628
+    ps             2 21 17056
+    nice           2 22 17044
+    scheduler_test 2 23 17312
+    sem_test       2 24 17080
+    console        3 25 0
+    a.txt          2 26 2290
+    dir            1 27 32
+    $ ls dir
+    .              1 27 32
+    ..             1 1 512
+    $ cp a.txt dir/
+    $ ls dir
+    .              1 27 48
+    ..             1 1 512
+    a.txt          2 28 2290
+    $ cat dir/a.txt
+    xv6 is a re-implementation of Dennis Ritchie's and Ken Thompson's Unix
+    Version 6 (v6).  xv6 loosely follows the structure and style of v6,
+    but is implemented for a modern x86-based multiprocessor using ANSI C.
+
+    ACKNOWLEDGMENTS
+
+    xv6 is inspired by John Lions's Commentary on UNIX 6th Edition (Peer
+    to Peer Communications; ISBN: 1-57398-013-7; 1st edition (June 14,
+    2000)). See also http://pdos.csail.mit.edu/6.828/2016/xv6.html, which
+    provides pointers to on-line resources for v6.
+
+    xv6 borrows code from the following sources:
+        JOS (asm.h, elf.h, mmu.h, bootasm.S, ide.c, console.c, and others)
+        Plan 9 (entryother.S, mp.h, mp.c, lapic.c)
+        FreeBSD (ioapic.c)
+        NetBSD (console.c)
+
+    The following people have made contributions: Russ Cox (context switching,
+    locking), Cliff Frey (MP), Xiao Yu (MP), Nickolai Zeldovich, and Austin
+    Clements.
+
+    We are also grateful for the bug reports and patches contributed by Silas
+    Boyd-Wickizer, Anton Burtsev, Cody Cutler, Mike CAT, Tej Chajed, Nelson Elhage,
+    Saar Ettinger, Alice Ferrazzi, Nathaniel Filardo, Peter Froehlich, Yakir Goaron,
+    Shivam Handa, Bryan Henry, Jim Huang, Alexander Kapshuk, Anders Kaseorg,
+    kehao95, Wolfgang Keller, Eddie Kohler, Austin Liew, Imbar Marinescu, Yandong
+    Mao, Hitoshi Mitake, Carmi Merimovich, Joel Nider, Greg Price, Ayan Shafqat,
+    Eldar Sehayek, Yongming Shen, Cam Tenny, Rafael Ubal, Warren Toomey, Stephen Tu,
+    Pablo Ventura, Xi Wang, Keiichi Watanabe, Nicolas Wolovick, Grant Wu, Jindong
+    Zhang, Icenowy Zheng, and Zou Chang Wei.
+
+    The code in the files that constitute xv6 is
+    Copyright 2006-2016 Frans Kaashoek, Robert Morris, and Russ Cox.
+
+    ERROR REPORTS
+
+    Please send errors and suggestions to Frans Kaashoek and Robert Morris
+    (kaashoek,rtm@mit.edu). The main purpose of xv6 is as a teaching
+    operating system for MIT's 6.828, so we are more interested in
+    simplifications and clarifications than new features.
+
+    BUILDING AND RUNNING XV6
+
+    To build xv6 on an x86 ELF machine (like Linux or FreeBSD), run
+    "make". On non-x86 or non-ELF machines (like OS X, even on x86), you
+    will need to install a cross-compiler gcc suite capable of producing
+    x86 ELF binaries. See http://pdos.csail.mit.edu/6.828/2016/tools.html.
+    Then run "make TOOLPREFIX=i386-jos-elf-". Now install the QEMU PC
+    simulator and run "make qemu".
+    $ 
+    ```
+5. 
+    ```shell
+    $ cp a.txt dir/b.txt
+    $ ls dir  
+    .              1 27 64
+    ..             1 1 512
+    a.txt          2 28 2290
+    b.txt          2 29 2290
+    $ cat dir/b.txt
+    xv6 is a re-implementation of Dennis Ritchie's and Ken Thompson's Unix
+    Version 6 (v6).  xv6 loosely follows the structure and style of v6,
+    but is implemented for a modern x86-based multiprocessor using ANSI C.
+
+    ACKNOWLEDGMENTS
+
+    xv6 is inspired by John Lions's Commentary on UNIX 6th Edition (Peer
+    to Peer Communications; ISBN: 1-57398-013-7; 1st edition (June 14,
+    2000)). See also http://pdos.csail.mit.edu/6.828/2016/xv6.html, which
+    provides pointers to on-line resources for v6.
+
+    xv6 borrows code from the following sources:
+        JOS (asm.h, elf.h, mmu.h, bootasm.S, ide.c, console.c, and others)
+        Plan 9 (entryother.S, mp.h, mp.c, lapic.c)
+        FreeBSD (ioapic.c)
+        NetBSD (console.c)
+
+    The following people have made contributions: Russ Cox (context switching,
+    locking), Cliff Frey (MP), Xiao Yu (MP), Nickolai Zeldovich, and Austin
+    Clements.
+
+    We are also grateful for the bug reports and patches contributed by Silas
+    Boyd-Wickizer, Anton Burtsev, Cody Cutler, Mike CAT, Tej Chajed, Nelson Elhage,
+    Saar Ettinger, Alice Ferrazzi, Nathaniel Filardo, Peter Froehlich, Yakir Goaron,
+    Shivam Handa, Bryan Henry, Jim Huang, Alexander Kapshuk, Anders Kaseorg,
+    kehao95, Wolfgang Keller, Eddie Kohler, Austin Liew, Imbar Marinescu, Yandong
+    Mao, Hitoshi Mitake, Carmi Merimovich, Joel Nider, Greg Price, Ayan Shafqat,
+    Eldar Sehayek, Yongming Shen, Cam Tenny, Rafael Ubal, Warren Toomey, Stephen Tu,
+    Pablo Ventura, Xi Wang, Keiichi Watanabe, Nicolas Wolovick, Grant Wu, Jindong
+    Zhang, Icenowy Zheng, and Zou Chang Wei.
+
+    The code in the files that constitute xv6 is
+    Copyright 2006-2016 Frans Kaashoek, Robert Morris, and Russ Cox.
+
+    ERROR REPORTS
+
+    Please send errors and suggestions to Frans Kaashoek and Robert Morris
+    (kaashoek,rtm@mit.edu). The main purpose of xv6 is as a teaching
+    operating system for MIT's 6.828, so we are more interested in
+    simplifications and clarifications than new features.
+
+    BUILDING AND RUNNING XV6
+
+    To build xv6 on an x86 ELF machine (like Linux or FreeBSD), run
+    "make". On non-x86 or non-ELF machines (like OS X, even on x86), you
+    will need to install a cross-compiler gcc suite capable of producing
+    x86 ELF binaries. See http://pdos.csail.mit.edu/6.828/2016/tools.html.
+    Then run "make TOOLPREFIX=i386-jos-elf-". Now install the QEMU PC
+    simulator and run "make qemu".
+    $ 
+    ```
+6. 
+    ```shell
+    $ cat .
+    ...READMEcatechoforktestgrepinikill     ln
+    ls
+    mkdir
+    shstressfsusertestswczombieheadcplshpsnicescheduler_testsem_testconsolea.txtir$ cp . a.txt
+    $ cat a.txt
+    ...READMEcatechoforktestgrepinikill     ln
+    ls
+    mkdir
+    shstressfsusertestswczombieheadcplshpsnicescheduler_testsem_testconsolea.txtir$ 
+    ```
+
+All operations performed as expected.
 
 ### 2
 #### 2.1
+##### Steps
+1. Change shell to `lsh`, try a wrong usage and a non-existent directory
+2. Create a new directory `dir` and copy `README` into it
+3. Change directory to `dir`
+4. Change directory to parent directory
+5. Exit the `lsh`
+
+##### Expected results
+1. Error messages printed for incorrect usages and non-existent directory
+2. `dir` is created and contains `README`
+3. Current working directory changes to `dir`
+4. Current working directory changes back to parent directory
+5. Shell exits to `sh`
+
+##### Actual results
+1. 
+    ```shell
+    SeaBIOS (version 1.16.3-debian-1.16.3-2)
+
+
+    iPXE (https://ipxe.org) 00:03.0 CA00 PCI2.10 PnP PMM+1EFCAF60+1EF0AF60 CA00
+                                                                                
+
+
+    Booting from Hard Disk..xv6...
+    cpu0: starting 0
+    sb: size 2063 nblocks 1979 ninodes 200 nlog 30 logstart 2 inodestart 32 bmap start 83
+    Scheduler default policy: DEFAULT
+    init: starting lsh
+    $ lsh
+    lsh> ls
+    .              1 1 512
+    ..             1 1 512
+    README         2 2 2290
+    cat            2 3 18868
+    echo           2 4 17648
+    forktest       2 5 10008
+    grep           2 6 22380
+    init           2 7 18532
+    kill           2 8 17676
+    ln             2 9 17592
+    ls             2 10 20544
+    mkdir          2 11 17732
+    rm             2 12 17716
+    sh             2 13 34564
+    stressfs       2 14 18660
+    usertests      2 15 75732
+    wc             2 16 19392
+    zombie         2 17 17244
+    head           2 18 22596
+    cp             2 19 19536
+    lsh            2 20 26628
+    ps             2 21 17056
+    nice           2 22 17044
+    scheduler_test 2 23 17312
+    sem_test       2 24 17080
+    console        3 25 0
+    lsh> cd
+    cd: error access (null)
+    lsh> cd dir
+    cd: error access dir
+    lsh> cd dir1 dir2
+    cd: too many arguments, only the first will be used
+    cd: error access dir1
+    lsh> 
+    ```
+2. 
+    ```shell
+    lsh> mkdir dir 
+    lsh> ls
+    .              1 1 512
+    ..             1 1 512
+    README         2 2 2290
+    cat            2 3 18868
+    echo           2 4 17648
+    forktest       2 5 10008
+    grep           2 6 22380
+    init           2 7 18532
+    kill           2 8 17676
+    ln             2 9 17592
+    ls             2 10 20544
+    mkdir          2 11 17732
+    rm             2 12 17716
+    sh             2 13 34564
+    stressfs       2 14 18660
+    usertests      2 15 75732
+    wc             2 16 19392
+    zombie         2 17 17244
+    head           2 18 22596
+    cp             2 19 19536
+    lsh            2 20 26628
+    ps             2 21 17056
+    nice           2 22 17044
+    scheduler_test 2 23 17312
+    sem_test       2 24 17080
+    console        3 25 0
+    dir            1 26 32
+    lsh> ls dir
+    .              1 26 32
+    ..             1 1 512
+    lsh> cp README dir/
+    lsh> ls dir
+    .              1 26 48
+    ..             1 1 512
+    README         2 27 2290
+    lsh> 
+    ```
+3. 
+    ```shell
+    lsh> cd dir
+    lsh> ../ls
+    .              1 26 48
+    ..             1 1 512
+    README         2 27 2290
+    lsh> 
+    ```
+4. 
+    ```shell
+    lsh> cd .. dir
+    cd: too many arguments, only the first will be used
+    lsh> ls
+    .              1 1 512
+    ..             1 1 512
+    README         2 2 2290
+    cat            2 3 18868
+    echo           2 4 17648
+    forktest       2 5 10008
+    grep           2 6 22380
+    init           2 7 18532
+    kill           2 8 17676
+    ln             2 9 17592
+    ls             2 10 20544
+    mkdir          2 11 17732
+    rm             2 12 17716
+    sh             2 13 34564
+    stressfs       2 14 18660
+    usertests      2 15 75732
+    wc             2 16 19392
+    zombie         2 17 17244
+    head           2 18 22596
+    cp             2 19 19536
+    lsh            2 20 26628
+    ps             2 21 17056
+    nice           2 22 17044
+    scheduler_test 2 23 17312
+    sem_test       2 24 17080
+    console        3 25 0
+    dir            1 26 48
+    lsh> 
+    ```
+5. 
+    ```shell
+    lsh> exit 
+    $ 
+    ```
+
+All operations performed as expected.
 
 #### 2.2
 ##### 2.2.1
+###### Steps
+1. Edit `README` to only containing `ls` and change shell to `lsh`
+2. Try `sh <`, `sh < a`, `sh < a README` and `sh < ls`
+3. Try `lsh < README` and `sh < README a`
+4. Create a directory `dir`, copy `README` into it, and try `sh < dir/README`
+
+###### Expected results
+1. `README` is modified to contain `ls`
+2. Error messages printed
+3. `ls` output by `sh` is displayed; and error message printed
+4. `ls` output by `sh` is displayed
+
+###### Actual results
+1. 
+    ```shell
+    SeaBIOS (version 1.16.3-debian-1.16.3-2)
+
+
+    iPXE (https://ipxe.org) 00:03.0 CA00 PCI2.10 PnP PMM+1EFCAF60+1EF0AF60 CA00
+                                                                                
+
+
+    Booting from Hard Disk..xv6...
+    cpu0: starting 0
+    sb: size 2063 nblocks 1979 ninodes 200 nlog 30 logstart 2 inodestart 32 bmap start 83
+    Scheduler default policy: DEFAULT
+    init: starting lsh
+    $ lsh
+    lsh> ls
+    .              1 1 512
+    ..             1 1 512
+    README         2 2 2
+    cat            2 3 18868
+    echo           2 4 17648
+    forktest       2 5 10008
+    grep           2 6 22380
+    init           2 7 18532
+    kill           2 8 17676
+    ln             2 9 17592
+    ls             2 10 20544
+    mkdir          2 11 17732
+    rm             2 12 17716
+    sh             2 13 34564
+    stressfs       2 14 18660
+    usertests      2 15 75732
+    wc             2 16 19392
+    zombie         2 17 17244
+    head           2 18 22596
+    cp             2 19 19536
+    lsh            2 20 26628
+    ps             2 21 17056
+    nice           2 22 17044
+    scheduler_test 2 23 17312
+    sem_test       2 24 17080
+    console        3 25 0
+    lsh> cat README
+    lslsh> 
+    ```
+2. 
+    ```shell
+    lslsh> sh <
+    <: failed to open (null)
+    lsh> sh < a
+    <: failed to open a
+    lsh> sh < a README
+    <: too many inputs, only the first will be used
+    <: failed to open a
+    lsh> sh < ls
+    $ exec: fail
+    exec ELF failed
+    $ lsh> 
+    ```
+3. 
+    ```shell
+    lsh> sh < README
+    $ .              1 1 512
+    ..             1 1 512
+    README         2 2 2
+    cat            2 3 18868
+    echo           2 4 17648
+    forktest       2 5 10008
+    grep           2 6 22380
+    init           2 7 18532
+    kill           2 8 17676
+    ln             2 9 17592
+    ls             2 10 20544
+    mkdir          2 11 17732
+    rm             2 12 17716
+    sh             2 13 34564
+    stressfs       2 14 18660
+    usertests      2 15 75732
+    wc             2 16 19392
+    zombie         2 17 17244
+    head           2 18 22596
+    cp             2 19 19536
+    lsh            2 20 26628
+    ps             2 21 17056
+    nice           2 22 17044
+    scheduler_test 2 23 17312
+    sem_test       2 24 17080
+    console        3 25 0
+    $ lsh> sh < README a
+    <: too many inputs, only the first will be used
+    $ .              1 1 512
+    ..             1 1 512
+    README         2 2 2
+    cat            2 3 18868
+    echo           2 4 17648
+    forktest       2 5 10008
+    grep           2 6 22380
+    init           2 7 18532
+    kill           2 8 17676
+    ln             2 9 17592
+    ls             2 10 20544
+    mkdir          2 11 17732
+    rm             2 12 17716
+    sh             2 13 34564
+    stressfs       2 14 18660
+    usertests      2 15 75732
+    wc             2 16 19392
+    zombie         2 17 17244
+    head           2 18 22596
+    cp             2 19 19536
+    lsh            2 20 26628
+    ps             2 21 17056
+    nice           2 22 17044
+    scheduler_test 2 23 17312
+    sem_test       2 24 17080
+    console        3 25 0
+    $ lsh> 
+    ```
+4. 
+    ```shell
+    $ lsh> mkdir dir
+    lsh> ls
+    .              1 1 512
+    ..             1 1 512
+    README         2 2 2
+    cat            2 3 18868
+    echo           2 4 17648
+    forktest       2 5 10008
+    grep           2 6 22380
+    init           2 7 18532
+    kill           2 8 17676
+    ln             2 9 17592
+    ls             2 10 20544
+    mkdir          2 11 17732
+    rm             2 12 17716
+    sh             2 13 34564
+    stressfs       2 14 18660
+    usertests      2 15 75732
+    wc             2 16 19392
+    zombie         2 17 17244
+    head           2 18 22596
+    cp             2 19 19536
+    lsh            2 20 26628
+    ps             2 21 17056
+    nice           2 22 17044
+    scheduler_test 2 23 17312
+    sem_test       2 24 17080
+    console        3 25 0
+    dir            1 26 32
+    lsh> ls dir
+    .              1 26 32
+    ..             1 1 512
+    lsh> cp README dir/
+    lsh> ls dir
+    .              1 26 48
+    ..             1 1 512
+    README         2 27 2
+    lsh> sh < dir/README
+    $ .              1 1 512
+    ..             1 1 512
+    README         2 2 2
+    cat            2 3 18868
+    echo           2 4 17648
+    forktest       2 5 10008
+    grep           2 6 22380
+    init           2 7 18532
+    kill           2 8 17676
+    ln             2 9 17592
+    ls             2 10 20544
+    mkdir          2 11 17732
+    rm             2 12 17716
+    sh             2 13 34564
+    stressfs       2 14 18660
+    usertests      2 15 75732
+    wc             2 16 19392
+    zombie         2 17 17244
+    head           2 18 22596
+    cp             2 19 19536
+    lsh            2 20 26628
+    ps             2 21 17056
+    nice           2 22 17044
+    scheduler_test 2 23 17312
+    sem_test       2 24 17080
+    console        3 25 0
+    dir            1 26 48
+    $ lsh> 
+    ```
+
+All operations performed as expected.
 
 ##### 2.2.2
+###### Steps
+1. Change shell to `lsh` and try `ls >`
+2. Try `ls > dir/a.txt`, `README > a.txt` and `ls > a.txt b.txt`
+3. Create directory `dir` and try `ls > dir/a.txt`
+3. Try `echo hello > a.txt`
+5. Try `help > b.txt`
+
+###### Expected results
+1. Some undefined behavior or error message printed (since the next value of memory 0 may not be 0, so the string at `NULL` may not be treated as empty in some built-in functions)
+2. Error message printed for `ls > dir/a.txt` since `dir` does not exist; error message printed for `README > a.txt`; `a.txt` is created as empty for `README > a.txt`; error message printed for `ls > a.txt b.txt` and `a.txt` replaced with `ls` output
+3. `dir` is created and `a.txt` is created inside it with `ls` output
+4. `a.txt` is overwritten with `hello`
+5. Help message printed but not written to `b.txt` since `help` is a built-in command
+
+###### Actual results
+1. 
+    ```shell
+    SeaBIOS (version 1.16.3-debian-1.16.3-2)
+
+
+    iPXE (https://ipxe.org) 00:03.0 CA00 PCI2.10 PnP PMM+1EFCAF60+1EF0AF60 CA00
+                                                                                
+
+
+    Booting from Hard Disk..xv6...
+    cpu0: starting 0
+    sb: size 2063 nblocks 1979 ninodes 200 nlog 30 logstart 2 inodestart 32 bmap start 83
+    Scheduler default policy: DEFAULT
+    init: starting lsh
+    $ lsh
+    lsh> ls
+    .              1 1 512
+    ..             1 1 512
+    README         2 2 2290
+    cat            2 3 18868
+    echo           2 4 17648
+    forktest       2 5 10008
+    grep           2 6 22380
+    init           2 7 18532
+    kill           2 8 17676
+    ln             2 9 17592
+    ls             2 10 20544
+    mkdir          2 11 17732
+    rm             2 12 17716
+    sh             2 13 34564
+    stressfs       2 14 18660
+    usertests      2 15 75732
+    wc             2 16 19392
+    zombie         2 17 17244
+    head           2 18 22596
+    cp             2 19 19536
+    lsh            2 20 26628
+    ps             2 21 17056
+    nice           2 22 17044
+    scheduler_test 2 23 17312
+    sem_test       2 24 17080
+    console        3 25 0
+    lsh> ls >
+    lsh> ls
+    .              1 1 512
+    ..             1 1 512
+    README         2 2 2290
+    cat            2 3 18868
+    echo           2 4 17648
+    forktest       2 5 10008
+    grep           2 6 22380
+    init           2 7 18532
+    kill           2 8 17676
+    ln             2 9 17592
+    ls             2 10 20544
+    mkdir          2 11 17732
+    rm             2 12 17716
+    sh             2 13 34564
+    stressfs       2 14 18660
+    usertests      2 15 75732
+    wc             2 16 19392
+    zombie         2 17 17244
+    head           2 18 22596
+    cp             2 19 19536
+    lsh            2 20 26628
+    ps             2 21 17056
+    nice           2 22 17044
+    scheduler_test 2 23 17312
+    sem_test       2 24 17080
+    console        3 25 0
+    �L$����q�U��W 2 26 681
+    lsh> 
+    ```
+2. 
+    ```shell
+    lsh> ls > dir/a.txt
+    >: failed to open dir/a.txt
+    lsh> ls
+    .              1 1 512
+    ..             1 1 512
+    README         2 2 2290
+    cat            2 3 18868
+    echo           2 4 17648
+    forktest       2 5 10008
+    grep           2 6 22380
+    init           2 7 18532
+    kill           2 8 17676
+    ln             2 9 17592
+    ls             2 10 20544
+    mkdir          2 11 17732
+    rm             2 12 17716
+    sh             2 13 34564
+    stressfs       2 14 18660
+    usertests      2 15 75732
+    wc             2 16 19392
+    zombie         2 17 17244
+    head           2 18 22596
+    cp             2 19 19536
+    lsh            2 20 26628
+    ps             2 21 17056
+    nice           2 22 17044
+    scheduler_test 2 23 17312
+    sem_test       2 24 17080
+    console        3 25 0
+    �L$����q�U��W 2 26 681
+    lsh> README > a.txt
+    lsh: exec failed
+    lsh> ls
+    .              1 1 512
+    ..             1 1 512
+    README         2 2 2290
+    cat            2 3 18868
+    echo           2 4 17648
+    forktest       2 5 10008
+    grep           2 6 22380
+    init           2 7 18532
+    kill           2 8 17676
+    ln             2 9 17592
+    ls             2 10 20544
+    mkdir          2 11 17732
+    rm             2 12 17716
+    sh             2 13 34564
+    stressfs       2 14 18660
+    usertests      2 15 75732
+    wc             2 16 19392
+    zombie         2 17 17244
+    head           2 18 22596
+    cp             2 19 19536
+    lsh            2 20 26628
+    ps             2 21 17056
+    nice           2 22 17044
+    scheduler_test 2 23 17312
+    sem_test       2 24 17080
+    console        3 25 0
+    �L$����q�U��W 2 26 681
+    a.txt          2 27 0
+    lsh> cat a.txt
+    lsh> ls > a.txt b.txt
+    >: too many outputs, only the first will be used
+    lsh> ls
+    .              1 1 512
+    ..             1 1 512
+    README         2 2 2290
+    cat            2 3 18868
+    echo           2 4 17648
+    forktest       2 5 10008
+    grep           2 6 22380
+    init           2 7 18532
+    kill           2 8 17676
+    ln             2 9 17592
+    ls             2 10 20544
+    mkdir          2 11 17732
+    rm             2 12 17716
+    sh             2 13 34564
+    stressfs       2 14 18660
+    usertests      2 15 75732
+    wc             2 16 19392
+    zombie         2 17 17244
+    head           2 18 22596
+    cp             2 19 19536
+    lsh            2 20 26628
+    ps             2 21 17056
+    nice           2 22 17044
+    scheduler_test 2 23 17312
+    sem_test       2 24 17080
+    console        3 25 0
+    �L$����q�U��W 2 26 681
+    a.txt          2 27 705
+    lsh> cat a.txt
+    .              1 1 512
+    ..             1 1 512
+    README         2 2 2290
+    cat            2 3 18868
+    echo           2 4 17648
+    forktest       2 5 10008
+    grep           2 6 22380
+    init           2 7 18532
+    kill           2 8 17676
+    ln             2 9 17592
+    ls             2 10 20544
+    mkdir          2 11 17732
+    rm             2 12 17716
+    sh             2 13 34564
+    stressfs       2 14 18660
+    usertests      2 15 75732
+    wc             2 16 19392
+    zombie         2 17 17244
+    head           2 18 22596
+    cp             2 19 19536
+    lsh            2 20 26628
+    ps             2 21 17056
+    nice           2 22 17044
+    scheduler_test 2 23 17312
+    sem_test       2 24 17080
+    console        3 25 0
+    �L$����q�U��W 2 26 681
+    a.txt          2 27 681
+    lsh> 
+    ```
+3. 
+    ```shell
+    lsh> mkdir dir
+    lsh> ls
+    .              1 1 512
+    ..             1 1 512
+    README         2 2 2290
+    cat            2 3 18868
+    echo           2 4 17648
+    forktest       2 5 10008
+    grep           2 6 22380
+    init           2 7 18532
+    kill           2 8 17676
+    ln             2 9 17592
+    ls             2 10 20544
+    mkdir          2 11 17732
+    rm             2 12 17716
+    sh             2 13 34564
+    stressfs       2 14 18660
+    usertests      2 15 75732
+    wc             2 16 19392
+    zombie         2 17 17244
+    head           2 18 22596
+    cp             2 19 19536
+    lsh            2 20 26628
+    ps             2 21 17056
+    nice           2 22 17044
+    scheduler_test 2 23 17312
+    sem_test       2 24 17080
+    console        3 25 0
+    �L$����q�U��W 2 26 681
+    a.txt          2 27 705
+    dir            1 28 32
+    lsh> ls dir
+    .              1 28 32
+    ..             1 1 512
+    lsh> ls > dir/a.txt
+    lsh> ls dir
+    .              1 28 48
+    ..             1 1 512
+    a.txt          2 29 728
+    lsh> cat dir/a.txt
+    .              1 1 512
+    ..             1 1 512
+    README         2 2 2290
+    cat            2 3 18868
+    echo           2 4 17648
+    forktest       2 5 10008
+    grep           2 6 22380
+    init           2 7 18532
+    kill           2 8 17676
+    ln             2 9 17592
+    ls             2 10 20544
+    mkdir          2 11 17732
+    rm             2 12 17716
+    sh             2 13 34564
+    stressfs       2 14 18660
+    usertests      2 15 75732
+    wc             2 16 19392
+    zombie         2 17 17244
+    head           2 18 22596
+    cp             2 19 19536
+    lsh            2 20 26628
+    ps             2 21 17056
+    nice           2 22 17044
+    scheduler_test 2 23 17312
+    sem_test       2 24 17080
+    console        3 25 0
+    �L$����q�U��W 2 26 681
+    a.txt          2 27 705
+    dir            1 28 48
+    lsh> 
+    ```
+4. 
+    ```shell
+    lsh> echo hello > a.txt
+    lsh> cat a.txt
+    hello
+    lsh>  
+    ```
+5. 
+    ```shell
+    lsh> help > b.txt
+    xv6 LSH
+    Type program names and arguments, and hit enter.
+    The following are built in:
+    cd
+    help
+    exit
+    lsh> ls
+    .              1 1 512
+    ..             1 1 512
+    README         2 2 2290
+    cat            2 3 18868
+    echo           2 4 17648
+    forktest       2 5 10008
+    grep           2 6 22380
+    init           2 7 18532
+    kill           2 8 17676
+    ln             2 9 17592
+    ls             2 10 20544
+    mkdir          2 11 17732
+    rm             2 12 17716
+    sh             2 13 34564
+    stressfs       2 14 18660
+    usertests      2 15 75732
+    wc             2 16 19392
+    zombie         2 17 17244
+    head           2 18 22596
+    cp             2 19 19536
+    lsh            2 20 26628
+    ps             2 21 17056
+    nice           2 22 17044
+    scheduler_test 2 23 17312
+    sem_test       2 24 17080
+    console        3 25 0
+    �L$����q�U��W 2 26 681
+    a.txt          2 27 6
+    dir            1 28 48
+    lsh> 
+    ```
+
+All operations performed as expected.
 
 ##### 2.2.3
+###### Steps
+1. Change shell to `lsh` and try `README | sh`, `ls | README` and `README | README`
+2. Create `a.txt` with `ls` in it and try `cat a.txt | sh`
+3. Create directory `dir`, create `a.txt` with `mkdir temp` in it inside `dir`, and try `cat dir/a.txt | sh`
+4. Try `help | sh`
+
+###### Expected results
+1. Error messages printed
+2. `ls` output by `sh` is displayed
+3. `temp` directory created inside current directory
+4. Help message printed and `sh` is not executed since `help` is a built-in command
+
+###### Actual results
+1. 
+    ```shell
+    SeaBIOS (version 1.16.3-debian-1.16.3-2)
+
+
+    iPXE (https://ipxe.org) 00:03.0 CA00 PCI2.10 PnP PMM+1EFCAF60+1EF0AF60 CA00
+                                                                                
+
+
+    Booting from Hard Disk..xv6...
+    cpu0: starting 0
+    sb: size 2063 nblocks 1979 ninodes 200 nlog 30 logstart 2 inodestart 32 bmap start 83
+    Scheduler default policy: DEFAULT
+    init: starting lsh
+    $ lsh
+    lsh> ls
+    .              1 1 512
+    ..             1 1 512
+    README         2 2 2290
+    cat            2 3 18868
+    echo           2 4 17648
+    forktest       2 5 10008
+    grep           2 6 22380
+    init           2 7 18532
+    kill           2 8 17676
+    ln             2 9 17592
+    ls             2 10 20544
+    mkdir          2 11 17732
+    rm             2 12 17716
+    sh             2 13 34564
+    stressfs       2 14 18660
+    usertests      2 15 75732
+    wc             2 16 19392
+    zombie         2 17 17244
+    head           2 18 22596
+    cp             2 19 19536
+    lsh            2 20 26628
+    ps             2 21 17056
+    nice           2 22 17044
+    scheduler_test 2 23 17312
+    sem_test       2 24 17080
+    console        3 25 0
+    lsh> README | sh
+    lsh: exec failed
+    $ lsh> ls | README
+    lsh: exec failed
+    lsh> README | README
+    lsh: exec failed
+    lsh: exec failed
+    lsh> 
+    ```
+2. 
+    ```shell
+    lsh> echo ls > a.txt
+    lsh> ls
+    .              1 1 512
+    ..             1 1 512
+    README         2 2 2290
+    cat            2 3 18868
+    echo           2 4 17648
+    forktest       2 5 10008
+    grep           2 6 22380
+    init           2 7 18532
+    kill           2 8 17676
+    ln             2 9 17592
+    ls             2 10 20544
+    mkdir          2 11 17732
+    rm             2 12 17716
+    sh             2 13 34564
+    stressfs       2 14 18660
+    usertests      2 15 75732
+    wc             2 16 19392
+    zombie         2 17 17244
+    head           2 18 22596
+    cp             2 19 19536
+    lsh            2 20 26628
+    ps             2 21 17056
+    nice           2 22 17044
+    scheduler_test 2 23 17312
+    sem_test       2 24 17080
+    console        3 25 0
+    a.txt          2 26 3
+    lsh> cat a.txt
+    ls
+    lsh> cat a.txt | sh
+    $ .              1 1 512
+    ..             1 1 512
+    README         2 2 2290
+    cat            2 3 18868
+    echo           2 4 17648
+    forktest       2 5 10008
+    grep           2 6 22380
+    init           2 7 18532
+    kill           2 8 17676
+    ln             2 9 17592
+    ls             2 10 20544
+    mkdir          2 11 17732
+    rm             2 12 17716
+    sh             2 13 34564
+    stressfs       2 14 18660
+    usertests      2 15 75732
+    wc             2 16 19392
+    zombie         2 17 17244
+    head           2 18 22596
+    cp             2 19 19536
+    lsh            2 20 26628
+    ps             2 21 17056
+    nice           2 22 17044
+    scheduler_test 2 23 17312
+    sem_test       2 24 17080
+    console        3 25 0
+    a.txt          2 26 3
+    $ lsh> 
+    ```
+3. 
+    ```shell
+    $ lsh> mkdir dir
+    lsh> ls
+    .              1 1 512
+    ..             1 1 512
+    README         2 2 2290
+    cat            2 3 18868
+    echo           2 4 17648
+    forktest       2 5 10008
+    grep           2 6 22380
+    init           2 7 18532
+    kill           2 8 17676
+    ln             2 9 17592
+    ls             2 10 20544
+    mkdir          2 11 17732
+    rm             2 12 17716
+    sh             2 13 34564
+    stressfs       2 14 18660
+    usertests      2 15 75732
+    wc             2 16 19392
+    zombie         2 17 17244
+    head           2 18 22596
+    cp             2 19 19536
+    lsh            2 20 26628
+    ps             2 21 17056
+    nice           2 22 17044
+    scheduler_test 2 23 17312
+    sem_test       2 24 17080
+    console        3 25 0
+    a.txt          2 26 3
+    dir            1 27 32
+    lsh> ls dir
+    .              1 27 32
+    ..             1 1 512
+    lsh> echo mkdir temp > dir/a.txt
+    lsh> ls dir
+    .              1 27 48
+    ..             1 1 512
+    a.txt          2 28 11
+    lsh> cat dir/a.txt
+    mkdir temp
+    lsh> cat dir/a.txt | sh
+    $ $ lsh> ls
+    .              1 1 512
+    ..             1 1 512
+    README         2 2 2290
+    cat            2 3 18868
+    echo           2 4 17648
+    forktest       2 5 10008
+    grep           2 6 22380
+    init           2 7 18532
+    kill           2 8 17676
+    ln             2 9 17592
+    ls             2 10 20544
+    mkdir          2 11 17732
+    rm             2 12 17716
+    sh             2 13 34564
+    stressfs       2 14 18660
+    usertests      2 15 75732
+    wc             2 16 19392
+    zombie         2 17 17244
+    head           2 18 22596
+    cp             2 19 19536
+    lsh            2 20 26628
+    ps             2 21 17056
+    nice           2 22 17044
+    scheduler_test 2 23 17312
+    sem_test       2 24 17080
+    console        3 25 0
+    a.txt          2 26 3
+    dir            1 27 48
+    temp           1 29 32
+    lsh> 
+    ```
+4. 
+    ```shell
+    lsh> help | sh
+    xv6 LSH
+    Type program names and arguments, and hit enter.
+    The following are built in:
+    cd
+    help
+    exit
+    lsh> 
+    ```
+
+All operations performed as expected.
 
 #### 2.3
+The default shell is changed to `lsh`.
+```shell
+SeaBIOS (version 1.16.3-debian-1.16.3-2)
+
+
+iPXE (https://ipxe.org) 00:03.0 CA00 PCI2.10 PnP PMM+1EFCAF60+1EF0AF60 CA00
+                                                                               
+
+
+Booting from Hard Disk..xv6...
+cpu0: starting 0
+sb: size 2063 nblocks 1979 ninodes 200 nlog 30 logstart 2 inodestart 32 bmap start 83
+Scheduler default policy: DEFAULT
+init: starting lsh
+lsh> 
+```
