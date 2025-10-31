@@ -8,20 +8,6 @@
         "type": "tabs",
         "children": [
           {
-            "id": "2f9a2a91db7b1b8d",
-            "type": "leaf",
-            "state": {
-              "type": "markdown",
-              "state": {
-                "file": "1022.md",
-                "mode": "preview",
-                "source": false
-              },
-              "icon": "lucide-file",
-              "title": "1022"
-            }
-          },
-          {
             "id": "7b3eb14cfa431327",
             "type": "leaf",
             "state": {
@@ -156,13 +142,13 @@
             "state": {
               "type": "outline",
               "state": {
-                "file": "1022.md",
+                "file": "1028.md",
                 "followCursor": false,
                 "showSearch": false,
                 "searchQuery": ""
               },
               "icon": "lucide-list",
-              "title": "Outline of 1022"
+              "title": "Outline of 1028"
             }
           }
         ],
@@ -183,10 +169,10 @@
       "bases:Create new base": false
     }
   },
-  "active": "2f9a2a91db7b1b8d",
+  "active": "74c4f0e91d8967a2",
   "lastOpenFiles": [
-    "1028.md",
     "1022.md",
+    "1028.md",
     "Assets/0938240FAF429890A5561F2FB3AEF251.png",
     "Assets/7761EF31986706181109E56C75E0BB6C.png",
     "Assets/E016AF7FEA7BB07A80113226E5644A7C.png",
