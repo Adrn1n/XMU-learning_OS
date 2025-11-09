@@ -7,8 +7,8 @@
 
 #include "sdh.h"
 
-// char *argv[] = {"sh", 0};
-char *argv[] = {"lsh", 0};
+char *argv[] = {"sh", 0};
+// char *argv[] = {"lsh", 0};
 
 int main(void)
 {
