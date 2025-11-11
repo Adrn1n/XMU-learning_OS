@@ -1,1 +1,1 @@
-/home/xmu_os/XMU-learning_OS/Lab/code/param.h
+../code/param.h

@@ -1,1 +1,1 @@
-/home/xmu_os/XMU-learning_OS/Lab/code/proc.c
+../code/proc.c

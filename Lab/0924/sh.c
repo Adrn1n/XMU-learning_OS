@@ -1,1 +1,1 @@
-/home/xmu_os/XMU-learning_OS/Lab/code/sh.c
+../code/sh.c

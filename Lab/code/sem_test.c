@@ -8,8 +8,6 @@
 #define TARGET_COUNT_PER_CHILD 50
 #define COUNTER_FILE "counter"
 
-
 int main(int argc, char **argv)
 {
-
 }

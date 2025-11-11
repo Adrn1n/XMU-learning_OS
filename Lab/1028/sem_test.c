@@ -1,1 +1,1 @@
-/home/xmu_os/XMU-learning_OS/Lab/code/sem_test.c
+../code/sem_test.c
