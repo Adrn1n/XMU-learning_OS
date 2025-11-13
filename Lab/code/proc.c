@@ -647,7 +647,19 @@ procdump(void)
 //the return value is 0
 int 
 getptable(int nproc, int size, char *buffer){
- 
+  if(!buffer)
+    return -1;
+  struct proc *p_src;
+  struct proc_us *p_dst=(struct proc_us*)buffer;
+  acquire(&ptable.lock);
+  p_src=ptable.proc;
+  for(int i=0;(i<nproc)&&(((char *)(p_dst+1)-buffer)<size)&&(p_src-(ptable.proc))<NPROC;++p_src)
+    if(p_src->state==UNUSED)
+      continue;
+    else
+      p_dst->sz=(p_src->sz),p_dst->state=(p_src->state),p_dst->pid=(p_src->pid),p_dst->ppid=(p_src->parent)?(p_src->parent->pid):-1,p_dst->priority=(p_src->priority),memmove(p_dst->name,p_src->name,sizeof(p_src->name)),p_dst->ctime=(p_src->ctime),p_dst->stime=(p_src->stime),p_dst->retime=(p_src->retime),p_dst->rutime=(p_src->rutime),++p_dst,++i;
+  release(&ptable.lock);
+  return 0;
 }
 
 // Change Process Priority
