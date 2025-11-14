@@ -669,7 +669,18 @@ getptable(int nproc, int size, char *buffer){
 int
 setpriority(int pid, int priority)
 {
-
+  if((pid<0)||(priority<0))
+    return -1;
+  short flag=0;
+  acquire(&ptable.lock);
+  for(struct proc *p=ptable.proc;(p-(ptable.proc)<NPROC);++p)
+    if((p->pid==pid)&&(p->state!=UNUSED))
+    {
+      p->priority=priority,flag=1;
+      break;
+    }
+  release(&ptable.lock);
+  return flag?pid:-1;
 }
 
 //sem is the index of sema
