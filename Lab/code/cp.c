@@ -3,10 +3,12 @@
 #include "user.h"
 #include "fcntl.h"
 
-#define BUF_SIZE 512
+#define BUF_SIZE 512 //
 
 int main(int argc, char *argv[])
 {
+    /*
+     */
     if (argc != 3)
     {
         printf(2, "cp: usage: cp <src> <dst>\n");

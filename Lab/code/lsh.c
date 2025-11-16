@@ -54,6 +54,8 @@ int lsh_num_builtins()
 
 int lsh_cd(struct cmd *cmd)
 {
+  /*
+  */
   if (cmd->left[2])
     printf(2, "cd: too many arguments, only the first will be used\n");
   if (chdir(cmd->left[1]) < 0)
@@ -79,6 +81,8 @@ int lsh_help(struct cmd *cmd)
 
 int lsh_exit(struct cmd *cmd)
 {
+  /*
+  */
   exit();
   return 0;
 }
@@ -114,6 +118,8 @@ int lsh_execute(struct cmd *cmd)
     break;
 
   case REDIN:
+    /*
+    */
     if (cmd->right[1])
       printf(2, "<: too many inputs, only the first will be used\n");
     if ((fd = open(cmd->right[0], O_RDONLY)) < 0)
@@ -134,6 +140,8 @@ int lsh_execute(struct cmd *cmd)
     break;
 
   case REDOUT:
+    /*
+    */
     if (cmd->right[1])
       printf(2, ">: too many outputs, only the first will be used\n");
     unlink(cmd->right[0]);
@@ -155,6 +163,8 @@ int lsh_execute(struct cmd *cmd)
     break;
 
   case PIPE:
+    /*
+    */
     if ((pipe(p)) < 0)
     {
       printf(2, "|: failed to create pipe\n");

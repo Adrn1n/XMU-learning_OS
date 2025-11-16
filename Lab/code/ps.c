@@ -7,6 +7,8 @@
 
 int main(int argc, char *argv[])
 {
+    /*
+     */
     struct proc_us ptable[NPROC] = {0};
     if (getptable(NPROC, NPROC * sizeof(struct proc_us), &ptable) < 0)
     {

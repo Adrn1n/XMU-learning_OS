@@ -3,11 +3,13 @@
 #include "user.h"
 #include "fcntl.h"
 
-#define MIN_PRIO 1
-#define MAX_PRIO 20
+#define MIN_PRIO 1  //
+#define MAX_PRIO 20 //
 
 int main(int argc, char *argv[])
 {
+    /*
+     */
     if (argc == 3)
     {
         int pid = atoi(argv[1]), prio = atoi(argv[2]);
