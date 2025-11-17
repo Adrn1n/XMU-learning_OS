@@ -650,19 +650,21 @@ int
 getptable(int nproc, int size, char *buffer){
   /*
   */
-  if(!buffer)
-    return -1;
-  struct proc *p_src;
-  struct proc_us *p_dst=(struct proc_us*)buffer;
-  acquire(&(ptable.lock));
-  p_src=ptable.proc;
-  for(int i=0;(i<nproc)&&(((char *)(p_dst+1)-buffer)<size)&&(p_src-(ptable.proc))<NPROC;++p_src)
-    if(p_src->state==UNUSED)
-      continue;
-    else
-      p_dst->sz=(p_src->sz),p_dst->state=(p_src->state),p_dst->pid=(p_src->pid),p_dst->ppid=(p_src->parent)?(p_src->parent->pid):-1,p_dst->priority=(p_src->priority),memmove(p_dst->name,p_src->name,sizeof(p_src->name)),p_dst->ctime=(p_src->ctime),p_dst->stime=(p_src->stime),p_dst->retime=(p_src->retime),p_dst->rutime=(p_src->rutime),++p_dst,++i;
-  release(&(ptable.lock));
-  return 0;
+  if(buffer)
+  {
+    struct proc *p_src;
+    struct proc_us *p_dst=(struct proc_us*)buffer;
+    acquire(&(ptable.lock));
+    p_src=ptable.proc;
+    for(int i=0;(i<nproc)&&(((char *)(p_dst+1)-buffer)<size)&&(p_src-(ptable.proc))<NPROC;++p_src)
+      if(p_src->state==UNUSED)
+        continue;
+      else
+        p_dst->sz=(p_src->sz),p_dst->state=(p_src->state),p_dst->pid=(p_src->pid),p_dst->ppid=(p_src->parent)?(p_src->parent->pid):-1,p_dst->priority=(p_src->priority),memmove(p_dst->name,p_src->name,sizeof(p_src->name)),p_dst->ctime=(p_src->ctime),p_dst->stime=(p_src->stime),p_dst->retime=(p_src->retime),p_dst->rutime=(p_src->rutime),++p_dst,++i;
+    release(&(ptable.lock));
+    return 0;
+  }
+  return -1;
 }
 
 // Change Process Priority
@@ -674,18 +676,20 @@ setpriority(int pid, int priority)
 {
   /*
   */
-  if((pid<0)||(priority<0))
-    return -1;
-  short flag=0;
-  acquire(&(ptable.lock));
-  for(struct proc *p=ptable.proc;(p-(ptable.proc)<NPROC);++p)
-    if((p->pid==pid)&&(p->state!=UNUSED))
-    {
-      p->priority=priority,flag=1;
-      break;
-    }
-  release(&(ptable.lock));
-  return flag?pid:-1;
+  if((pid>=0)&&(priority>=0))
+  {
+    short flag=0;
+    acquire(&(ptable.lock));
+    for(struct proc *p=ptable.proc;(p-(ptable.proc)<NPROC);++p)
+      if((p->pid==pid)&&(p->state!=UNUSED))
+      {
+        p->priority=priority,flag=1;
+        break;
+      }
+    release(&(ptable.lock));
+    return flag?pid:-1;
+  }
+  return -1;
 }
 
 //sem is the index of sema
@@ -719,25 +723,28 @@ sem_destroy(int sem)
     release(&(sema[sem].lock));
     return 0; 
   }
-  else
-    return -1;
+  return -1;
 }
 
 int sem_wait(int sem, int count)
 {
   /*
   */
-  acquire(&(sema[sem].lock));
-  if(sema[sem].value>=count)
-    sema[sem].value-=count;
-  else
+  if((sem>=0)&&(sem<MAX_SEMA_NUM))
   {
-    while(sema[sem].value<count)
-      sleep(sema+sem,&(sema[sem].lock));
-    sema[sem].value-=count;
+    acquire(&(sema[sem].lock));
+    if(sema[sem].value>=count)
+      sema[sem].value-=count;
+    else
+    {
+      while(sema[sem].value<count)
+        sleep(sema+sem,&(sema[sem].lock));
+      sema[sem].value-=count;
+    }
+    release(&sema[sem].lock);
+    return 0;
   }
-  release(&sema[sem].lock);
-  return 0;
+  return -1;
 }
 
 
@@ -745,11 +752,15 @@ int sem_signal(int sem, int count)
 {
   /*
   */
-  acquire(&(sema[sem].lock));
-  sema[sem].value+=count;
-  wakeup(&sema[sem]);
-  release(&sema[sem].lock);
-  return 0;
+  if((sem>=0)&&(sem<MAX_SEMA_NUM))
+  {
+    acquire(&(sema[sem].lock));
+    sema[sem].value+=count;
+    wakeup(&sema[sem]);
+    release(&sema[sem].lock);
+    return 0;
+  }
+  return -1;
 }
 
 
