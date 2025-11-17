@@ -51,7 +51,7 @@ Create the file `sem_test.c` and implement the following process:
 
 ## Implementation
 ### Features
-#### 1
+#### 1 Process Priority
 ##### 1
 - `getptable()`
     - Can only hold information of up to `nproc` and not exceed the `size` of the buffer
@@ -72,7 +72,7 @@ Create the file `sem_test.c` and implement the following process:
 - `proc.c`
     - Since the defult scheduler does not consider priority, and all other schedulers are not implemented, changing priority has no effect on process scheduling but only changes the stored priority value
 
-#### 2
+#### 2 Semaphore Implementation
 - `sem_init()`
     - Returns -1 when error occurs, but doesn't view initializing an already active semaphore as an error
 - `sem_destroy()`
@@ -82,7 +82,7 @@ Create the file `sem_test.c` and implement the following process:
 - `sem_signal()`
     - Reurns -1 when error occurs
 
-#### 3
+#### 3 Solve File Read/Write Mutual Exclusion Using Semaphores
 - `file_init()`
     - Doesn't check if the file name is null
 - `get_file_cnt()`
@@ -94,7 +94,18 @@ Create the file `sem_test.c` and implement the following process:
     - Sleeps for `NUM_CHILDREN` ticks to ensure all child processes are created before proceeding
 
 ### Code
-#### 1
+#### Fixes
+- `pram.h`
+    ```c
+    //...
+
+    // #define FSSIZE       1000  // size of file system in blocks
+    #define FSSIZE       1080  // size of file system in blocks
+
+    ```
+    Since more code are added, the file system size needs to be increased to avoid running out of space. (1080 is the minimum size to run the code)
+
+#### 1 Process Priority
 ##### 1
 - `proc.c`
     ```c
@@ -230,7 +241,7 @@ Create the file `sem_test.c` and implement the following process:
 
     ```
 
-#### 2
+#### 2 Semaphore Implementation
 - `int sem_init(int sem, int value)`
     ```c
     int sem_init(int sem, int value)
@@ -313,7 +324,7 @@ Create the file `sem_test.c` and implement the following process:
 
     ```
 
-#### 3
+#### 3 Solve File Read/Write Mutual Exclusion Using Semaphores
 - `sem_test.c`
     ```c
     //...
@@ -450,3 +461,141 @@ Create the file `sem_test.c` and implement the following process:
     ```
 
 ## Results
+### 1 Process Priority
+#### Steps
+1. Try `ps` command
+2. Try `nice`, `nice 1`, `nice 1 2 3`
+3. Try `nice 100 5`, `nice 2 0`, `nice 2 21`
+4. Try `nice 2 1`, then `ps` command; `nice 2 20`, then `ps` command; `nice 2 5`, then `ps` command
+
+#### Expected Result
+1. Display the process list in the specified format
+2. Show usage error message
+3. Show error message and invalid parameter message
+4. Change the priority of process with PID 2 accordingly
+
+#### Actual Result
+```shell
+SeaBIOS (version 1.16.3-debian-1.16.3-2)
+
+
+iPXE (https://ipxe.org) 00:03.0 CA00 PCI2.10 PnP PMM+1EFCAF60+1EF0AF60 CA00
+                                                                               
+
+
+Booting from Hard Disk..xv6...
+cpu0: starting 0
+sb: size 1080 nblocks 996 ninodes 200 nlog 30 logstart 2 inodestart 32 bmap start 83
+Scheduler default policy: DEFAULT
+init: starting lsh
+$ ps
+PID     PPID    PRI     MEM     STATE           CMD
+1       N/A     10      12288   SLEEPING        init
+2       1       10      16384   SLEEPING        sh
+3       2       10      12288   RUNNING         ps
+$ nice
+nice: usage: nice <pid> <prio>
+$ nice 1
+nice: usage: nice <pid> <prio>
+$ nice 1 2 3
+nice: usage: nice <pid> <prio>
+$ nice 100 5
+nice: error to set pid=100 with prio=5
+$ nice 2 0
+nice: invalid param(prio=0), should be in [1,20]
+$ nice 2 21
+nice: invalid param(prio=21), should be in [1,20]
+$ nice 2 1
+$ ps
+PID     PPID    PRI     MEM     STATE           CMD
+1       N/A     10      12288   SLEEPING        init
+2       1       1       16384   SLEEPING        sh
+11      2       10      12288   RUNNING         ps
+$ nice 2 20
+$ ps
+PID     PPID    PRI     MEM     STATE           CMD
+1       N/A     10      12288   SLEEPING        init
+2       1       20      16384   SLEEPING        sh
+13      2       10      12288   RUNNING         ps
+$ nice 2 5
+$ ps
+PID     PPID    PRI     MEM     STATE           CMD
+1       N/A     10      12288   SLEEPING        init
+2       1       5       16384   SLEEPING        sh
+15      2       10      12288   RUNNING         ps
+$ 
+```
+
+All results are as expected.
+
+### 2 Semaphore Implementation & 3 Solve File Read/Write Mutual Exclusion Using Semaphores
+Since the semaphore implementation is tested within `sem_test`, the results of both tasks are presented together.
+
+#### Steps
+1. Increase `FSSIZE` (to at least 1081) in `param.h` since file which stores the counter needs space. Then try `sem_test` command
+2. Try `ls` and `cat counter` to check the final value in the file
+
+#### Expected Result
+1. After all child processes finish, the final value in the file should be 500
+2. File `conter` should exist and contain the value 500
+
+#### Actual Result
+```shell
+SeaBIOS (version 1.16.3-debian-1.16.3-2)
+
+
+iPXE (https://ipxe.org) 00:03.0 CA00 PCI2.10 PnP PMM+1EFCAF60+1EF0AF60 CA00
+                                                                               
+
+
+Booting from Hard Disk..xv6...
+cpu0: starting 0
+sb: size 1081 nblocks 997 ninodes 200 nlog 30 logstart 2 inodestart 32 bmap start 83
+Scheduler default policy: DEFAULT
+init: starting lsh
+$ sem_test
+sem_test: child started
+sem_test: child started
+sem_test: child started
+sem_test: child started
+sem_test: child started
+sem_test: child started
+sem_test: child started
+sem_test: child startesem_test: child started
+sem_test: child started
+d
+sem_test: test passed (cnt=500)
+$ ls
+.              1 1 512
+..             1 1 512
+README         2 2 2290
+cat            2 3 18828
+echo           2 4 17608
+forktest       2 5 9988
+grep           2 6 22340
+init           2 7 18492
+kill           2 8 17636
+ln             2 9 17552
+ls             2 10 20504
+mkdir          2 11 17692
+rm             2 12 17676
+sh             2 13 34524
+stressfs       2 14 18620
+usertests      2 15 75692
+wc             2 16 19352
+zombie         2 17 17204
+head           2 18 22556
+cp             2 19 19496
+lsh            2 20 26588
+ps             2 21 18928
+nice           2 22 18088
+scheduler_test 2 23 17272
+sem_test       2 24 23704
+console        3 25 0
+counter        2 26 4
+$ cat counter
+500
+$ 
+```
+
+All results are as expected.
