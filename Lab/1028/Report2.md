@@ -1,6 +1,6 @@
 # Lab2
 ## Tasks
-### 1 Process Priority
+### 1. Process Priority
 #### 1
 Implement the `ps` command (`ps.c`).
 - The command format should be as follows:
@@ -17,7 +17,7 @@ Implement a user-space program (`nice.c`) to modify process priority at runtime.
 - `nice pid priority` (priority values are in the range [1, 20], where a smaller value indicates higher priority)
 - Implement the system call (`setpriority(pid, priority)`)
 
-### 2 Semaphore Implementation
+### 2. Semaphore Implementation
 Implement the following functions (`proc.c`):
 - `int sem_init(int sem, int value)`
     Initializes the value of the semaphore structure
@@ -39,7 +39,7 @@ Implement the following functions (`proc.c`):
     `int count`: This parameter is a value used for comparison with the semaphore's value
     Returns 0
 
-### 3 Solve File Read/Write Mutual Exclusion Using Semaphores
+### 3. Solve File Read/Write Mutual Exclusion Using Semaphores
 Create the file `sem_test.c` and implement the following process:
 - Create 10 processes, each reading a numerical value from a file and incrementing it by 1. This process should be repeated 50 times
 - Ensure that after mutual exclusion, the final value written to the file is the sum of all process counts, 500
@@ -51,7 +51,7 @@ Create the file `sem_test.c` and implement the following process:
 
 ## Implementation
 ### Features
-#### 1 Process Priority
+#### 1. Process Priority
 ##### 1
 - `getptable()`
     - Can only hold information of up to `nproc` and not exceed the `size` of the buffer
@@ -72,7 +72,7 @@ Create the file `sem_test.c` and implement the following process:
 - `proc.c`
     - Since the defult scheduler does not consider priority, and all other schedulers are not implemented, changing priority has no effect on process scheduling but only changes the stored priority value
 
-#### 2 Semaphore Implementation
+#### 2. Semaphore Implementation
 - `sem_init()`
     - Returns -1 when error occurs, but doesn't view initializing an already active semaphore as an error
 - `sem_destroy()`
@@ -82,7 +82,7 @@ Create the file `sem_test.c` and implement the following process:
 - `sem_signal()`
     - Reurns -1 when error occurs
 
-#### 3 Solve File Read/Write Mutual Exclusion Using Semaphores
+#### 3. Solve File Read/Write Mutual Exclusion Using Semaphores
 - `file_init()`
     - Doesn't check if the file name is null
 - `get_file_cnt()`
@@ -105,7 +105,7 @@ Create the file `sem_test.c` and implement the following process:
     ```
     Since more code are added, the file system size needs to be increased to avoid running out of space. (1080 is the minimum size to run the code)
 
-#### 1 Process Priority
+#### 1. Process Priority
 ##### 1
 - `proc.c`
     ```c
@@ -241,7 +241,7 @@ Create the file `sem_test.c` and implement the following process:
 
     ```
 
-#### 2 Semaphore Implementation
+#### 2. Semaphore Implementation
 - `int sem_init(int sem, int value)`
     ```c
     int sem_init(int sem, int value)
@@ -324,7 +324,7 @@ Create the file `sem_test.c` and implement the following process:
 
     ```
 
-#### 3 Solve File Read/Write Mutual Exclusion Using Semaphores
+#### 3. Solve File Read/Write Mutual Exclusion Using Semaphores
 - `sem_test.c`
     ```c
     //...
@@ -461,7 +461,7 @@ Create the file `sem_test.c` and implement the following process:
     ```
 
 ## Results
-### 1 Process Priority
+### 1. Process Priority
 #### Steps
 1. Try `ps` command
 2. Try `nice`, `nice 1`, `nice 1 2 3`
@@ -528,7 +528,7 @@ $
 
 All results are as expected.
 
-### 2 Semaphore Implementation & 3 Solve File Read/Write Mutual Exclusion Using Semaphores
+### 2. Semaphore Implementation & 3. Solve File Read/Write Mutual Exclusion Using Semaphores
 Since the semaphore implementation is tested within `sem_test`, the results of both tasks are presented together.
 
 #### Steps
