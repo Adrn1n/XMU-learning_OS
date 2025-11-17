@@ -7,8 +7,8 @@
 #define NUM_CHILDREN 10
 #define TARGET_COUNT_PER_CHILD 50
 #define COUNTER_FILE "counter"
-#define MAX_NUM_LEN 3
-#define SEMA_IDX 0 //
+#define MAX_NUM_LEN 3 //
+#define SEMA_IDX 0    //
 
 /*
  */
@@ -93,6 +93,8 @@ void child_proc()
 
 int main(int argc, char **argv)
 {
+    /*
+     */
     short flag = 1;
     if (!sem_init(SEMA_IDX, 1))
     {
