@@ -14,6 +14,7 @@
  */
 int file_init(char *f_name, int init_val)
 {
+    unlink(f_name);
     int fd = open(f_name, O_CREATE | O_WRONLY);
     if (fd >= 0)
     {
@@ -114,8 +115,7 @@ int main(int argc, char **argv)
                     child_proc();
             }
             for (int i = 0; flag && (i < NUM_CHILDREN); ++i)
-                if (wait() < 0)
-                    flag = 0, printf(2, "sem_test: main: wait failed\n");
+                wait();
             if (flag)
             {
                 int res = get_file_cnt(COUNTER_FILE), expt = NUM_CHILDREN * TARGET_COUNT_PER_CHILD;

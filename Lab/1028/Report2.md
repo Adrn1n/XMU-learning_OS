@@ -44,13 +44,54 @@ Create the file `sem_test.c` and implement the following process:
 - Create 10 processes, each reading a numerical value from a file and incrementing it by 1. This process should be repeated 50 times
 - Ensure that after mutual exclusion, the final value written to the file is the sum of all process counts, 500
 
-## Implementation
-### Environment
+## Environment
 - M4 MacBook Air
 - VMware Fusion Professional Version 13.6.3 (24585314)
 - `Linux ubuntuserver 6.14.0-35-generic #35~24.04.1-Ubuntu SMP PREEMPT_DYNAMIC Tue Oct 14 13:30:46 UTC 2 aarch64 aarch64 aarch64 GNU/Linux`
 
+## Implementation
 ### Features
+#### 1
+##### 1
+- `getptable()`
+    - Can only hold information of up to `nproc` and not exceed the `size` of the buffer
+    - Skips processes in the `UNUSED` state
+    - Holds `ptable`, so any other process which tries to access it will be blocked until the lock is released by the current process
+- `ps.c`
+    - Prints like the format specified in the task description
+    - Skips processes in the `UNUSED` state
+    - Uses a single `\t` to align columns, but when the length difference before the tab is large enough to reach different tab stops, each row aligns differently, causing misaligned columns
+    - `STATE` column is aligned by adding spaces after state strings, making it the same length (aligned to the max length of state strings)
+
+##### 2
+- `nice.c`
+    - Since `atoi()` can't handle negative numbers, so the behavior may be unexpected when negative numbers are input
+- `setpriority()`
+    - Unlimited priority values, but negative values are not allowed
+    - Holds `ptable`, so any other process which tries to access it will be blocked until the lock is released by the current process
+- `proc.c`
+    - Since the defult scheduler does not consider priority, and all other schedulers are not implemented, changing priority has no effect on process scheduling but only changes the stored priority value
+
+#### 2
+- `sem_init()`
+    - Returns -1 when error occurs, but doesn't view initializing an already active semaphore as an error
+- `sem_destroy()`
+    - Reurns -1 when error occurs
+- `sem_wait()`
+    - Reurns -1 when error occurs
+- `sem_signal()`
+    - Reurns -1 when error occurs
+
+#### 3
+- `file_init()`
+    - Doesn't check if the file name is null
+- `get_file_cnt()`
+    - Doesn't check if the file name is null
+    - Since `atoi()` can't handle negative numbers, so the behavior may be unexpected when the file contains a negative number
+- `set_file_cnt()`
+    - Doesn't check if the file name is null
+- `child_proc()`
+    - Sleeps for `NUM_CHILDREN` ticks to ensure all child processes are created before proceeding
 
 ### Code
 #### 1
