@@ -184,7 +184,11 @@ UPROGS=\
 	_lsh\
 	_ps\
 	_nice\
-	_scheduler_test\
+# 	_scheduler_test\
+# 	_sem_test\
+
+UPROGS+=\
+	_test_scheduler\
 	_sem_test\
 
 fs.img: mkfs README $(UPROGS)
