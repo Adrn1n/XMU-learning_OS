@@ -8,6 +8,11 @@
 #include "traps.h"
 #include "spinlock.h"
 
+/*
+*/
+#define NON_PREEMPTIVE_SCHED_NUM 1
+const int NON_PREEMPTIVE_SCHED[NON_PREEMPTIVE_SCHED_NUM] = {2};
+
 // Interrupt descriptor table (shared by all CPUs).
 struct gatedesc idt[256];
 extern uint vectors[];  // in vectors.S: array of 256 entry pointers
@@ -105,7 +110,20 @@ trap(struct trapframe *tf)
   // If interrupts were on while locks held, would need to check nlock.
   if(myproc() && myproc()->state == RUNNING &&
      tf->trapno == T_IRQ0+IRQ_TIMER)
-    yield();
+    // yield();
+    /*
+    */
+    {
+      short flag=1;
+      for(int i=0;i<NON_PREEMPTIVE_SCHED_NUM;++i)
+        if(getscheduler()==NON_PREEMPTIVE_SCHED[i])
+        {
+          flag=0;
+          break;
+        }
+      if(flag)
+        yield();
+    }
 
   // Check if the process has been killed since we yielded
   if(myproc() && myproc()->killed && (tf->cs&3) == DPL_USER)

@@ -103,6 +103,12 @@ found:
   p->state = EMBRYO;
   p->priority = 10;
   p->pid = nextpid++;
+  /*
+  */
+  p->ctime=ticks;
+  p->retime=0;
+  p->rutime=0;
+  p->stime=0;
 
   release(&ptable.lock);
 
@@ -982,6 +988,8 @@ struct proc *defaultScheduler(void) {
 
 // Priority Scheduler -------------------
 struct proc *priorityScheduler() {
+  /*
+  */
   struct proc *res=0;
   for(struct proc *p=(ptable.proc);p<(ptable.proc+NPROC);++p)
     if(p->state==RUNNABLE)
@@ -999,6 +1007,8 @@ struct proc *priorityScheduler() {
 
 // FCFS Scheduler -----------------------
 struct proc *fcfsScheduler() {
+  /*
+  */
   struct proc *res=0;
   for(struct proc *p=(ptable.proc);p<(ptable.proc+NPROC);++p)
     if(p->state==RUNNABLE)
@@ -1017,30 +1027,42 @@ struct proc *fcfsScheduler() {
 // // CFS Scheduler -------------------------
 // RR Scheduler -------------------------
 struct proc *rrScheduler() {
-  static unsigned int idx=0;
-  for(struct proc *p=(ptable.proc+idx);p<(ptable.proc+NPROC);++p)
-    if(p->state==RUNNABLE)
-    {
-      idx=(p-(ptable.proc)+1)%NPROC;
-      return p;
-    }
+  /*
+  */
+  static int idx=NPROC-1;
+  int i=idx;
+  do
+    if(ptable.proc[(idx=((idx+1)%NPROC))].state==RUNNABLE)
+      return ptable.proc+idx;
+  while(i!=idx);
   return 0;
 }
 
 // SML Scheduler ---------------------------
+/*
+*/
 #define MLQ_LEVELS 3
 const int MLQ_TIME_SLICES[MLQ_LEVELS]={7,14};
 struct proc *smlScheduler() {
+  /*
+  */
   struct proc *MQ[MLQ_LEVELS][NPROC]={0};
   int Idxs[MLQ_LEVELS]={0};
   for(struct proc *p=(ptable.proc);p<(ptable.proc+NPROC);++p)
     if(p->state==RUNNABLE)
+    {
       for(int i=0;i<MLQ_LEVELS;++i)
-        if(p->priority<=(MLQ_TIME_SLICES[i]))
+        if(i<(MLQ_LEVELS-1))
         {
-          MQ[i][Idxs[i]++]=p;
-          break;
+          if(p->priority<=(MLQ_TIME_SLICES[i]))
+          {
+            MQ[i][Idxs[i]++]=p;
+            break;
+          }
         }
+        else
+          MQ[i][Idxs[i]++]=p;
+    }
   for(int i=0;i<MLQ_LEVELS;++i)
     if(Idxs[i]>0)
       return MQ[i][random(Idxs[i])];
