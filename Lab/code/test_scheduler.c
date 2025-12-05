@@ -186,9 +186,9 @@ int main(int argc, char *argv[])
                 ++cnt;
             }
         printf(1, "\tAverage ready time: %d/%d\n", Res[0], cnt);
-        printf(1, "\tAverage run time: %d/%d\n", Res[1], cnt);
+        printf(1, "\tAverage running time: %d/%d\n", Res[1], cnt);
         printf(1, "\tAverage sleep time: %d/%d\n", Res[2], cnt);
-        printf(1, "\tAverage turnaround: %d/%d\n", Res[0] + Res[1] + Res[2], cnt);
+        printf(1, "\tAverage turnaround time: %d/%d\n", Res[0] + Res[1] + Res[2], cnt);
     }
     exit();
 }
