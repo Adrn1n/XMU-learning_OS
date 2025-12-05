@@ -44,7 +44,7 @@ void tast_cpu(const int cal_len, const int cal_rnd)
  */
 void tast_io(char *const f_name, const int wr_len, const int wr_num)
 {
-    if ((f_name) && (wr_len > 0) && (wr_num > 0))
+    if (f_name && (wr_len > 0) && (wr_num > 0))
     {
         char line[wr_len + 1];
         for (int i = 0; i < wr_num; ++i)
@@ -70,7 +70,7 @@ void tast_io(char *const f_name, const int wr_len, const int wr_num)
 int run_test(const int *const Num_tsk, const int len, int *const Res, const int *const Prio)
 {
     int tsk_cnt = 0;
-    if ((Num_tsk) && (len > 0) && (Res))
+    if (Num_tsk && (len > 0) && Res && Prio)
     {
         int Map_PID2Res[PROC_NUM][2] = {0}, idx = 0;
         for (int i = 0; i < len; ++i)
