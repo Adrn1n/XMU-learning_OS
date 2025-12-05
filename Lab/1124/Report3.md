@@ -261,9 +261,6 @@ For test runner:
 - If the returned process ID from `wait2()` cannot be found in the mapping, an error message is printed to standard error; And the corresponding metrics in `Res` which it should update are not updated
 
 #### Steps
-Based on the code, here are the refined detailed steps:
-
-#### Steps
 1. Define constants for scheduler count, process count, task counts, monitoring metrics, CPU task parameters, I/O task parameters, file name, priority array, and sleep time
 2. Implement `tast_cpu()` function to perform CPU-bound calculations
     1. Validate `cal_len` and `cal_rnd` are positive, otherwise exit
